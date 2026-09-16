@@ -1,0 +1,39 @@
+# ============================================================================
+# dsh-output-shape — DSH bundle patch
+# ============================================================================
+# 宿主行：随 bundle 层栈插入 Web profile。本包做两件事：
+#   ① 把 skills/i-have-adhd 注册进 ctx.skills 全局层（默认开）；
+#   ② 可选：把同一份规则常驻注入 system prompt（默认**关**）。
+#
+# 安装（在 DSH 里让助手执行，或关闭 DSH 后在终端执行）：
+#   dsh plugin --profile web add link:D:/DeepSeek/dsh-plugins/dsh-output-shape
+# 装完**重启一次桌面端**（宿主行 + 新技能都要重新扫描）。
+#
+# ⚠ 打开 alwaysOn 之前，请先把 dsh-cache-control 的 session-gate.md 里那节
+#   「R4 输出形状」删掉 —— 两处都常驻就是同一套规则注入两遍，每请求多花一份 token。
+#   切换顺序：① 先改 config alwaysOn: true 并重启（此时两份并存，功能不中断）
+#            ② 确认形状正常后再删 R4（session-gate.md 存盘即生效，无需重启）。
+#
+# 想临时关掉常驻注入而不动仓库文件，用逃生开关（技能注册不受影响）：
+#   $env:DSH_OUTPUT_SHAPE_DISABLE = '1'
+#
+# 在自己的 $DSH_HOME/profiles/web/cordis.patch.yml 里按 id 覆盖 config
+# （config 是整块替换：覆盖时把其它键一起写上）：
+#   - id: output-shape
+#     config:
+#       registerSkills: true
+#       alwaysOn: false
+#       maxBytes: 16384
+# ============================================================================
+
+- insert:
+    - id: output-shape
+      name: dsh-output-shape
+      config:
+        # 是否把本包 skills/ 注册进全局技能目录。
+        registerSkills: true
+        # 是否常驻注入 system prompt。默认 false —— 会话守则里已有一份 R4，
+        # 同时开会重复注入。要切过来见上面的三步说明。
+        alwaysOn: false
+        # 常驻注入文本的字节上限（这段文本每请求重复计费）。
+        maxBytes: 16384

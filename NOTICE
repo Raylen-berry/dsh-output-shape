@@ -1,0 +1,24 @@
+dsh-output-shape
+================
+
+本插件的规则文本（skills/i-have-adhd/SKILL.md）蒸馏自：
+
+    i-have-adhd
+    https://github.com/ayghri/i-have-adhd
+    Copyright (c) ayghri
+    Licensed under the MIT License
+
+上游是一套「ADHD 友好输出」的 10 条规则（首行给下一步、多步编号、状态复述、跑题后置、
+具体时间估计、战果可见、报错讲因果、列表 ≤5、无开场白无客套），最初为 Claude Code /
+Codex 等 CLI 编码助手编写，附 SessionStart 常驻 hook。
+
+本插件的改动：
+
+- 10 条规则**中文重写**并压缩，与 dsh-cache-control 会话守则 R1–R3 同格式；
+  去掉原版「ADHD 五条心理事实」的铺垫段（对模型无执行价值，纯 token）。
+- 破例条款补第 6 条：规则与宿主/会话守则冲突时，system prompt 与 R1–R3 优先。
+- 上游的 always-on hook 改成 DSH 的两种形态：技能注册 + 可选 `ctx.systemPrompt.section`
+  常驻注入（默认关）。
+
+上游许可全文见上游仓库 LICENSE（MIT）。上游 SKILL.md 原文另存于本机
+`D:\DeepSeek\github-plugins\i-have-adhd\UPSTREAM-SKILL.md`（未随本包分发）。
