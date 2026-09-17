@@ -100,16 +100,18 @@ ok('④ 段名与 order 符合契约',
   sections.length === 1 && sections[0].name === 'dsh-output-shape:output-shape' && sections[0].order === 405,
   J({ n: sections[0] && sections[0].name, o: sections[0] && sections[0].order }))
 const sectionText = () => sections[0].text()
-ok('④ 默认不注入：text() 返回空串（宿主会丢弃空段）', sectionText() === '', JSON.stringify(sectionText()))
+// 默认值在 v0.2.0 从 false 翻成 true：本插件成了这套规则的真源（会话守则里的 R4 已摘出）。
+ok('④ 默认注入：没写过 settings.json 时 text() 就给出规则正文',
+  sectionText().includes('# i-have-adhd'), sectionText().slice(0, 24).replace(/\n/g, ' '))
+ok('④ 注入形态里没有 frontmatter（不会把 YAML 送进提示词）', !sectionText().startsWith('---'))
 
 const settingsPath = path.join(HOME, 'dsh-output-shape', 'settings.json')
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
 fs.writeFileSync(settingsPath, JSON.stringify({ alwaysOn: true }), 'utf8')
-ok('④ settings.json 表态开 ⇒ text() 给出规则正文',
+ok('④ settings.json 表态开 ⇒ text() 仍给出规则正文',
   sectionText().includes('# i-have-adhd') && sectionText().includes('首行即可行动'), sectionText().slice(0, 30).replace(/\n/g, ' '))
-ok('④ 注入形态里没有 frontmatter（不会把 YAML 送进提示词）', !sectionText().startsWith('---'))
 fs.writeFileSync(settingsPath, JSON.stringify({ alwaysOn: false }), 'utf8')
-ok('④ settings.json 表态关 ⇒ text() 又回到空串（改盘即生效，无需重启）', sectionText() === '')
+ok('④ 显式关 ⇒ text() 返回空串（宿主会丢弃空段；改盘即生效，无需重启）', sectionText() === '')
 process.env.DSH_OUTPUT_SHAPE_DISABLE = '1'
 fs.writeFileSync(settingsPath, JSON.stringify({ alwaysOn: true }), 'utf8')
 ok('④ 逃生开关压过一切：env=1 ⇒ 即使设置开着也不注入', sectionText() === '')
@@ -124,6 +126,11 @@ ok('④ 没表过态 + config.alwaysOn=false ⇒ 不注入',
   m.shapeEnabled({ alwaysOn: false, maxBytes: MAX }, null) === false)
 ok('④ 表过态时 config 不参与：settings=false 压过 config=true',
   m.shapeEnabled({ alwaysOn: true, maxBytes: MAX }, { alwaysOn: false }) === false)
+// v0.2.0 默认翻成"开"：兜底判据是 `alwaysOn !== false`，所以缺省/怪值都算开，只有显式 false 才关。
+ok('④ 默认开的语义：config 里没写 alwaysOn ⇒ 注入（不是"漏写就静默关"）',
+  m.shapeEnabled(m.normalizeConfig({}), null) === true)
+ok('④ 默认开的语义：normalizeConfig 保留显式 false',
+  m.normalizeConfig({ alwaysOn: false }).alwaysOn === false)
 
 // ---- ⑤ HTTP 路由 ----
 console.log('\n— ⑤ 路由 —')
@@ -158,8 +165,11 @@ ok('⑤ 当前规则远未触及上限（不是"标了未截断其实被砍"）'
   st.body.shape.bytes + ' / ' + st.body.shape.maxBytes)
 
 const g0 = await getJ('/os/settings.json')
-ok('⑤ GET /os/settings.json：还没表态时 settings 为 null（不是伪装成 false）',
-  g0.status === 200 && g0.body.settings === null && g0.body.injected === false, J(g0.body))
+ok('⑤ GET /os/settings.json 给界面一个能直接画开关的布尔值（不是 null）',
+  g0.status === 200 && g0.body.settings && typeof g0.body.settings.alwaysOn === 'boolean'
+  && g0.body.injected === g0.body.settings.alwaysOn, J(g0.body))
+ok('⑤ declared 才表达"有没有表过态"：没写过 settings.json 时为 null',
+  g0.body.declared === null, J({ declared: g0.body.declared }))
 
 const p1 = await putJ('/os/settings.json', { alwaysOn: true })
 ok('⑤ PUT 打开 ⇒ 落盘且立即生效', p1.status === 200 && p1.body.settings.alwaysOn === true && p1.body.injected === true, J(p1.body))
@@ -181,6 +191,18 @@ const g405b = await fetch(base + '/os/skills/reload')
 ok('⑤ POST 路由拒 GET（405）', g405b.status === 405, String(g405b.status))
 const rl = await fetch(base + '/os/skills/reload', { method: 'POST' })
 ok('⑤ POST /os/skills/reload 可用', rl.status === 200 && (await rl.json()).registered.includes('i-have-adhd'))
+
+// 预览即模型所见：/os/shape.json 必须返回**注入形态**（剥了 frontmatter、花括号已中和），
+// 而不是文件原文 —— 否则界面上看到的和模型看到的是两份，正是 cache-control 踩过的坑。
+const sh = await getJ('/os/shape.json')
+ok('⑤ GET /os/shape.json 返回注入形态正文',
+  sh.status === 200 && sh.body.ok === true && typeof sh.body.text === 'string'
+  && sh.body.text.startsWith('# i-have-adhd') && !sh.body.text.startsWith('---'), J({ head: String(sh.body.text).slice(0, 16) }))
+ok('⑤ shape.json 的 text 长度与 keptBytes/bytes 同源（不是另算一份）',
+  B(sh.body.text) === sh.body.keptBytes && sh.body.bytes === sh.body.keptBytes, J({ t: B(sh.body.text), k: sh.body.keptBytes }))
+ok('⑤ shape.json 里没有未中和的成对花括号', !/\{\{|\}\}/.test(sh.body.text))
+const sh405 = await fetch(base + '/os/shape.json', { method: 'PUT' })
+ok('⑤ shape.json 拒非 GET（裸 GET 不改状态的反向：写方法一律拒）', sh405.status === 405, String(sh405.status))
 
 // ---- ⑥ 契约：段名唯一 + 与 CI 清单一致 ----
 console.log('\n— ⑥ 契约 —')

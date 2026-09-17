@@ -9,12 +9,12 @@
 #   dsh plugin --profile web add link:D:/DeepSeek/dsh-plugins/dsh-output-shape
 # 装完**重启一次桌面端**（宿主行 + 新技能都要重新扫描）。
 #
-# ⚠ 打开 alwaysOn 之前，请先把 dsh-cache-control 的 session-gate.md 里那节
-#   「R4 输出形状」删掉 —— 两处都常驻就是同一套规则注入两遍，每请求多花一份 token。
-#   切换顺序：① 先改 config alwaysOn: true 并重启（此时两份并存，功能不中断）
-#            ② 确认形状正常后再删 R4（session-gate.md 存盘即生效，无需重启）。
+# 默认 alwaysOn: true —— 本插件就是这套形状规则的**真源**。会话守则里那节 R4 已于
+#   2026-09-16 摘出（dsh-cache-control/session-gate.md 现在只留一句归属声明），
+#   所以不存在两处同时注入。若你在别处又抄了一份常驻副本，关掉这里的开关或删掉那份。
 #
-# 想临时关掉常驻注入而不动仓库文件，用逃生开关（技能注册不受影响）：
+# 想临时关掉常驻注入而不动仓库文件：设置页「输出形状」的开关，或逃生开关
+# （技能注册不受影响）：
 #   $env:DSH_OUTPUT_SHAPE_DISABLE = '1'
 #
 # 在自己的 $DSH_HOME/profiles/web/cordis.patch.yml 里按 id 覆盖 config
@@ -22,7 +22,7 @@
 #   - id: output-shape
 #     config:
 #       registerSkills: true
-#       alwaysOn: false
+#       alwaysOn: true
 #       maxBytes: 16384
 # ============================================================================
 
@@ -32,8 +32,8 @@
       config:
         # 是否把本包 skills/ 注册进全局技能目录。
         registerSkills: true
-        # 是否常驻注入 system prompt。默认 false —— 会话守则里已有一份 R4，
-        # 同时开会重复注入。要切过来见上面的三步说明。
-        alwaysOn: false
+        # 是否常驻注入 system prompt。默认 true：本插件是这套规则的真源，
+        # 会话守则里的 R4 已摘出，不会重复注入。关掉＝退回"只在需要时调用技能"。
+        alwaysOn: true
         # 常驻注入文本的字节上限（这段文本每请求重复计费）。
         maxBytes: 16384

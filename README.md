@@ -31,12 +31,26 @@ dsh plugin --profile web add link:D:/DeepSeek/dsh-plugins/dsh-output-shape
 之后改**已有**技能正文仍需重启；`POST /os/skills/reload` 只能让新增的技能目录免重启生效
 （技能注册同名 first-wins）。
 
+## 界面（v0.2.0）
+
+| 位置 | 插槽 | 说明 |
+| --- | --- | --- |
+| 输入条右侧 chip「形状」 | `conversation.input.right`（order 210） | 点一下直接切常驻注入，徽标显示 开/关。cache-control 的 chip 在 order 200，故意错开 |
+| 设置 → 输出形状 | `settings.section`（order 66） | 同一个开关 + 状态明细（技能注册、实际注入、是否表过态、规则体积/上限、逃生开关）+「查看模型实际看到的规则正文」抽屉 |
+
+两处入口共用同一份数据源（本插件的 `/os/*` 路由），没有第二份状态。
+DOM 锚点是契约名，改名要同步 `dsh-plugins/INTERFACES.md`：
+`data-os-chip` · `data-os-toggle` · `data-os-state` · `data-os-switch` · `data-os-page` · `data-os-preview` · `data-os-err`。
+
+chip 拨的是**常驻注入**，不是"技能开不开"——技能装了就在目录里、按需加载不占 token，没有开关可言。
+设置页顶部会写明与「会话策略」R4 的关系：**两边同时开＝同一套规则注入两遍**。
+
 ## 换成常驻注入（可选，三步不中断）
 
 ```powershell
-# ① 打开常驻，然后重启桌面端（此时会话守则 R4 与它并存，功能不中断）
+# ① 打开常驻（或直接点输入条上的 chip「形状」）
 curl.exe -X PUT http://127.0.0.1:43129/os/settings.json -H "content-type: application/json" -d "{\"alwaysOn\":true}"
-# ② 重启后 GET /os/state 确认 injected=true
+# ② 确认 injected=true（下一个请求就生效，无需重启）
 curl.exe http://127.0.0.1:43129/os/state
 # ③ 把 dsh-cache-control 的 session-gate.md 里「## R4 输出形状」整节删掉（存盘即生效，无需重启）
 ```
@@ -47,11 +61,12 @@ curl.exe http://127.0.0.1:43129/os/state
 
 | 路由 | 方法 | 作用 |
 | --- | --- | --- |
-| `/os/state` | GET | 段名/order/已注册技能/当前是否注入/注入文本的字节三元组 |
-| `/os/settings.json` | GET · PUT | 读/写 `$DSH_HOME/dsh-output-shape/settings.json`（`{alwaysOn}`）。PUT 后**下一个请求即生效**，无需重启 |
+| `/os/state` | GET | 段名/order/已注册技能/当前是否注入/是否被 env 关掉/注入文本的字节三元组 |
+| `/os/settings.json` | GET · PUT | 读/写 `$DSH_HOME/dsh-output-shape/settings.json`。GET 返回**生效值** `settings.alwaysOn`（界面能直接画开关）＋ `declared`（有没有写过，没写过是 `null`）。PUT 后**下一个请求即生效**，无需重启 |
+| `/os/shape.json` | GET | **注入形态**正文（已剥 frontmatter、花括号已中和、按上限截断）＋同源字节三元组。预览即模型所见 |
 | `/os/skills/reload` | POST | 补注册新增的技能目录（同名 first-wins） |
 
-裸 GET 一律不改状态；非 GET/PUT/POST 返回 405。
+裸 GET 一律不改状态；写方法打到只读路由返回 405。
 
 ## 配置
 

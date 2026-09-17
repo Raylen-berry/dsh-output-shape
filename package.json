@@ -1,6 +1,6 @@
 {
   "name": "dsh-output-shape",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "输出形状插件（ADHD 友好）：把 ayghri/i-have-adhd 的 10 条规则做成 DSH 可用的两种形态 —— ① 默认注册技能 i-have-adhd（按需调用，说\"关闭 ADHD 模式\"即停）；② 可选常驻注入 system prompt（默认关，段名 dsh-output-shape:output-shape、order 405）。规则真源只有一份：skills/i-have-adhd/SKILL.md，常驻注入直接读它的正文（剥 frontmatter），不会漂。蒸馏自 GitHub 项目 ayghri/i-have-adhd（MIT）。默认不常驻，是为了不和 dsh-cache-control 的会话守则 R4 重复注入 —— 要切换请先把 R4 从 session-gate.md 删掉。",
   "keywords": [
     "dsh",
@@ -26,21 +26,31 @@
   },
   "files": [
     "index.js",
+    "client.js",
     "skills",
     "tools",
     "cordis.patch.yml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "NOTICE"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
     }
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.2-alpha.1"
+    "@deepseek-ai/dsh-host-webserver": "^0.1.2-alpha.1",
+    "react": "^18.2.0"
   },
   "repository": {
     "type": "git",

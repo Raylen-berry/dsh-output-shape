@@ -44,7 +44,8 @@ export const DISABLE_ENV = 'DSH_OUTPUT_SHAPE_DISABLE'
 
 const DEFAULTS = {
   registerSkills: true,
-  alwaysOn: false,
+  // 默认开：本插件是这套形状规则的**真源**（会话守则里的 R4 已于 2026-09-16 摘出）。
+  alwaysOn: true,
   maxBytes: SHAPE_MAX_BYTES,
 }
 
@@ -61,7 +62,8 @@ export function normalizeConfig(raw) {
   const maxBytes = Number(config.maxBytes)
   return {
     registerSkills: config.registerSkills !== false,
-    alwaysOn: config.alwaysOn === true,
+    // 默认开 ⇒ 只有显式写 false 才关；写成别的值（缺省、null、'no'）都按默认开处理。
+    alwaysOn: config.alwaysOn !== false,
     maxBytes: Number.isFinite(maxBytes) && maxBytes >= 1024 ? Math.floor(maxBytes) : SHAPE_MAX_BYTES,
   }
 }
@@ -255,8 +257,11 @@ export async function writeSettings(next) {
 export function shapeEnabled(config, settings) {
   if (process.env[DISABLE_ENV] === '1') return false
   const s = settings === undefined ? readSettingsSync() : settings
+  // 表过态就听它的：settings.json 里只存真布尔（writeSettings 已 sanitize），
+  // 所以这里等价于"读过盘就以盘为准"。
   if (s) return s.alwaysOn === true
-  return config ? config.alwaysOn === true : false
+  // 没表态 ⇒ 用 config 兜底；默认开，故只有显式 false 才关。
+  return config ? config.alwaysOn !== false : true
 }
 
 // ---------------------------------------------------------------------------
@@ -436,7 +441,16 @@ export async function apply(ctx, rawConfig) {
       handler: async (req, res) => {
         if (req.method === 'GET') {
           const settings = readSettingsSync()
-          sendJson(res, 200, { ok: true, settings, injected: shapeEnabled(config, settings) })
+          sendJson(res, 200, {
+            ok: true,
+            // 界面要的是一个能直接画开关的布尔值，所以这里给**生效值**（effective）；
+            // declared 才说明"用户是否表过态"——null = 还没写过 settings.json，
+            // 此时生效值来自 cordis config 的 alwaysOn 兜底。两者分开，界面就不会把
+            // "没表态"渲染成"已关"这种假事实。
+            settings: { alwaysOn: shapeEnabled(config, settings) },
+            declared: settings ? settings.alwaysOn : null,
+            injected: shapeEnabled(config, settings),
+          })
           return
         }
         if (req.method !== 'PUT') { sendJson(res, 405, { ok: false, error: 'method not allowed' }); return }
@@ -453,6 +467,19 @@ export async function apply(ctx, rawConfig) {
         } catch (err) {
           sendJson(res, 500, { ok: false, error: String((err && err.message) || err) })
         }
+      },
+    }))
+
+    // 预览即模型所见：返回的是**注入形态**（剥 frontmatter、花括号中和、按上限截断），
+    // 不另开一条读原文的路 —— 否则界面上看到的和模型看到的两份，正是 cache-control
+    // v1.6.x 踩过的坑。
+    ctx.effect(() => webServer.register({
+      kind: 'exact',
+      path: '/os/shape.json',
+      handler: async (req, res) => {
+        if (req.method !== 'GET') { sendJson(res, 405, { ok: false, error: 'method not allowed' }); return }
+        const text = loadShapeSync(config.maxBytes)
+        sendJson(res, 200, Object.assign({ ok: true, text }, shapeMeta(config.maxBytes)))
       },
     }))
 
