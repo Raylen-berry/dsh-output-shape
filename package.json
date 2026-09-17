@@ -1,7 +1,7 @@
 {
   "name": "dsh-output-shape",
   "version": "0.2.0",
-  "description": "输出形状插件（ADHD 友好）：把 ayghri/i-have-adhd 的 10 条规则做成 DSH 可用的两种形态 —— ① 默认注册技能 i-have-adhd（按需调用，说\"关闭 ADHD 模式\"即停）；② 可选常驻注入 system prompt（默认关，段名 dsh-output-shape:output-shape、order 405）。规则真源只有一份：skills/i-have-adhd/SKILL.md，常驻注入直接读它的正文（剥 frontmatter），不会漂。蒸馏自 GitHub 项目 ayghri/i-have-adhd（MIT）。默认不常驻，是为了不和 dsh-cache-control 的会话守则 R4 重复注入 —— 要切换请先把 R4 从 session-gate.md 删掉。",
+  "description": "输出形状插件（ADHD 友好）：把 ayghri/i-have-adhd 的 10 条规则做成 DSH 可用的两种形态 —— ① 注册技能 i-have-adhd（按需调用，说\"关闭 ADHD 模式\"即停）；② 常驻注入 system prompt（**v0.2.0 起默认开**，段名 dsh-output-shape:output-shape、order 405）。规则真源只有一份：skills/i-have-adhd/SKILL.md，常驻注入直接读它的正文（剥 frontmatter），不会漂。界面：输入条 chip「形状」一键切常驻 + 设置页分区「输出形状」（状态明细与规则正文预览）。dsh-cache-control 会话守则里的 R4 已于 v1.9.1 摘出交给本插件，别再抄回去，否则同一套规则注入两遍。蒸馏自 GitHub 项目 ayghri/i-have-adhd（MIT）。**换台机器：装完必须重启 DSH Desktop；settings.json 在 $DSH_HOME/dsh-output-shape，不随仓库走。**",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -16,6 +16,7 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
     "./package.json": "./package.json"
   },
   "scripts": {

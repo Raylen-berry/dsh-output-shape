@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const TOOLS = HERE
 
-const SUITES = ['verify-shape.mjs', 'verify-client.mjs']
+const SUITES = ['verify-manifest.mjs', 'verify-shape.mjs', 'verify-client.mjs']
+// 完整性闸只扫 verify-*.mjs；诊断脚本另放，这里留一行说明它是什么。
 const EXCLUDED = {}
 
 const files = fs.readdirSync(TOOLS).filter((f) => /^verify-.*\.mjs$/.test(f)).sort()
