@@ -1,7 +1,7 @@
 {
   "name": "dsh-output-shape",
-  "version": "0.2.0",
-  "description": "输出形状插件（ADHD 友好）：把 ayghri/i-have-adhd 的 10 条规则做成 DSH 可用的两种形态 —— ① 注册技能 i-have-adhd（按需调用，说\"关闭 ADHD 模式\"即停）；② 常驻注入 system prompt（**v0.2.0 起默认开**，段名 dsh-output-shape:output-shape、order 405）。规则真源只有一份：skills/i-have-adhd/SKILL.md，常驻注入直接读它的正文（剥 frontmatter），不会漂。界面：输入条 chip「形状」一键切常驻 + 设置页分区「输出形状」（状态明细与规则正文预览）。dsh-cache-control 会话守则里的 R4 已于 v1.9.1 摘出交给本插件，别再抄回去，否则同一套规则注入两遍。蒸馏自 GitHub 项目 ayghri/i-have-adhd（MIT）。**换台机器：装完必须重启 DSH Desktop；settings.json 在 $DSH_HOME/dsh-output-shape，不随仓库走。**",
+  "version": "0.2.1",
+  "description": "杈撳嚭褰㈢姸鎻掍欢锛圓DHD 鍙嬪ソ锛夛細鎶?ayghri/i-have-adhd 鐨?10 鏉¤鍒欏仛鎴?DSH 鍙敤鐨勪袱绉嶅舰鎬?鈥斺€?鈶?娉ㄥ唽鎶€鑳?i-have-adhd锛堟寜闇€璋冪敤锛岃\"鍏抽棴 ADHD 妯″紡\"鍗冲仠锛夛紱鈶?甯搁┗娉ㄥ叆 system prompt锛?*v0.2.0 璧烽粯璁ゅ紑**锛屾鍚?dsh-output-shape:output-shape銆乷rder 405锛夈€傝鍒欑湡婧愬彧鏈変竴浠斤細skills/i-have-adhd/SKILL.md锛屽父椹绘敞鍏ョ洿鎺ヨ瀹冪殑姝ｆ枃锛堝墺 frontmatter锛夛紝涓嶄細婕傘€傜晫闈細杈撳叆鏉?chip銆屽舰鐘躲€嶄竴閿垏甯搁┗ + 璁剧疆椤靛垎鍖恒€岃緭鍑哄舰鐘躲€嶏紙鐘舵€佹槑缁嗕笌瑙勫垯姝ｆ枃棰勮锛夈€俤sh-cache-control 浼氳瘽瀹堝垯閲岀殑 R4 宸蹭簬 v1.9.1 鎽樺嚭浜ょ粰鏈彃浠讹紝鍒啀鎶勫洖鍘伙紝鍚﹀垯鍚屼竴濂楄鍒欐敞鍏ヤ袱閬嶃€傝捀棣忚嚜 GitHub 椤圭洰 ayghri/i-have-adhd锛圡IT锛夈€?*鎹㈠彴鏈哄櫒锛氳瀹屽繀椤婚噸鍚?DSH Desktop锛泂ettings.json 鍦?$DSH_HOME/dsh-output-shape锛屼笉闅忎粨搴撹蛋銆?*",
   "keywords": [
     "dsh",
     "dsh-plugin",

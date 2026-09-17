@@ -1,5 +1,26 @@
 # 变更记录
 
+## 0.2.1 — 2026-09-17 · 修：漏写 `exports["./client"]` 把整台 DSH 打进安全模式
+
+**现象**（用户报告）：重启后 DSH 进安全模式，技能目录从 15 个缩到 3 个，`/cc/`、`/bl/`、`/tds/` 等**所有**自研插件路由一起 404。
+
+**真凶是我上一轮加 client 半时漏的一行**。宿主日志逐字对上了：
+
+```
+Error: client-modules: dsh-output-shape declares dsh.client but exports no "./client" bundle
+    at ClientModuleRegistry.resolveMeta (…/@deepseek-ai/dsh-client-modules/lib/index.js:681:35)
+    at ClientModuleRegistry.flush (:875) ← new ClientModuleRegistry (:504)
+[desktop] safe mode: third-party web profile bundles are blocked
+```
+
+**为什么一个插件的错会让全部插件消失**：`ClientModuleRegistry` 在**构造期**同步遍历所有 loader entry 并 `flush()`，任一包抛错即 `ClientPackageCompositionError` ⇒ 整张图组装失败 ⇒ 桌面端判定"启动失败"，退到最小平滑进安全档（`SAFE_MODE_BUNDLES` 只有 `dsh-base` + `dsh-web-app`）。所以症状是全局的、元凶是局部的——**别被"所有插件都挂了"误导成宿主坏了**。
+
+**修法**：`package.json` 补 `"./client": "./client.js"`（本机另外 6 个带界面的插件都是这个形状，抄它们就行）。顺带把 description 里已过期的"默认关／要切换请先删 R4"改成 v0.2.0 的真状态。
+
+**这类 bug 为什么测不出来**：当时 70/70 全绿。因为两套测试分别 `import index.js` 和用 `new Function` 跑 `client.js`，**都不经过 Node 的 exports 解析**——清单少一行对代码路径毫无影响，只有宿主的取包动作会撞。故新增 `tools/verify-manifest.mjs`（12 项）专测清单自洽性：`dsh.client ⇄ exports["./client"] ⇄ 文件存在 ⇄ files 列表 ⇄ peerDeps.react`，并与同机插件横向比对写法是否一致。另留 `tools/diagnose-client-export.mjs`（跨包手工诊断，非 CI 套件）。
+
+**退出安全模式**：不能靠删文件——安全档由桌面端的 `--safe-mode` / 管理界面控制，出口是管理界面里的 restart → `launchHarness()`。**在安全模式窗口点「重启 / Restart」**即可回正常档（修复已在盘上，重启就能加载）。
+
 ## 0.2.0 — 2026-09-16 · 加界面：输入条 chip「形状」+ 设置页分区「输出形状」
 
 **需求**（用户 2026-09-16）：v0.1.0 是纯宿主侧，装完界面上零存在感——"要能看见、要有明显的开关"。
